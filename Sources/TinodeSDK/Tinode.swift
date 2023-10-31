@@ -267,10 +267,7 @@ public class Tinode {
         }
 
         public var listenersThreadSafe: [TinodeEventListener] {
-            queue.sync {
-                print(String(cString: __dispatch_queue_get_label(nil)))
-                return self.listeners
-            }
+            queue.sync { return self.listeners }
         }
 
         func onConnect(code: Int, reason: String, params: [String: JSONValue]?) {
@@ -586,8 +583,14 @@ public class Tinode {
     }
     
     
-    private func dispatch(_ msg: String) throws {
-
+    private func dispatch(_ msgg: String) throws {
+//        let msg = "{\"ctrl\":{\"id\":\"73697\",\"params\":{\"build\":\"mysql:v0.22.8\",\"callTimeout\":30,\"iceServers\":[{\"urls\":[\"stun:stun.l.google.com:19302\"]},{\"username\":\"bb349260055bc625dcaf24a5\",\"credential\":\"+u28h11ZfSMfX2V6\",\"urls\":[\"turn:relay.metered.ca:80\",\"turn:relay.metered.ca:443\",\"turn:relay.metered.ca:443?transport=tcp\"]}],\"maxFileUploadSize\":8388608,\"maxMessageSize\":262144,\"maxSubscriberCount\":32,\"maxTagCount\":16,\"maxTagLength\":96,\"minTagLength\":2,\"reqCred\":{\"auth\":[\"email\"]},\"ver\":\"0.22\"},\"code\":201,\"text\":\"created\",\"ts\":\"2023-06-13T06:46:34.374Z\"}}"
+        
+//        let msg = "
+//        {"ctrl":{"id":"66582","params":{"build":"mysql:v0.22.7","callTimeout":30,"iceServers":[{"urls":["stun:stun.l.google.com:19302"]},{"username":"bb349260055bc625dcaf24a5","credential":"+u28h11ZfSMfX2V6","urls":["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"]}],"maxFileUploadSize":33554432,"maxMessageSize":4194304,"maxSubscriberCount":32,"maxTagCount":16,"maxTagLength":96,"minTagLength":2,\"reqCred\":{\"auth\":[\"email\"]},"ver":"0.22"},"code":201,"text":"created","ts":"2024-06-13T09:15:24.736Z"}}"
+        
+        let msg = removeCred(jsondoc: msgg)
+        
         guard !msg.isEmpty else {
             return
         }
@@ -596,7 +599,6 @@ public class Tinode {
         guard let data = msg.data(using: .utf8) else {
             throw TinodeJsonError.decode
         }
-        
         let serverMsg = try Tinode.jsonDecoder.decode(ServerMessage.self, from: data)
 
         listenerNotifier.onMessage(msg: serverMsg)
@@ -650,14 +652,11 @@ public class Tinode {
                 if let t = getTopic(topicName: topicName) {
                     t.routePres(pres: pres)
                     // For P2P topics presence is addressed to 'me' only. Forward it to the actual topic, if it's found.
-                    if let forwardTo = getTopic(topicName: pres.src!) {
-                        forwardTo.routePres(pres: pres)
+                    if topicName == Tinode.kTopicMe, case .p2p = Tinode.topicTypeByName(name: pres.src) {
+                        if let forwardTo = getTopic(topicName: pres.src!) {
+                            forwardTo.routePres(pres: pres)
+                        }
                     }
-//                    if topicName == Tinode.kTopicMe, case .p2p = Tinode.topicTypeByName(name: pres.src) {
-//                        if let forwardTo = getTopic(topicName: pres.src!) {
-//                            forwardTo.routePres(pres: pres)
-//                        }
-//                    }
                 }
             }
             listenerNotifier.onPresMessage(pres: pres)
