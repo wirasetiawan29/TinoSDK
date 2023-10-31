@@ -542,12 +542,18 @@ public class Tinode {
         return String(nextMsgId)
     }
     private func resolveWithPacket(id: String?, pkt: ServerMessage) throws {
-        if let idUnwrapped = id {
-            let p = futures.removeValue(forKey: idUnwrapped)
-            if let r = p, !r.isDone {
-                try r.resolve(result: pkt)
-            }
+        
+        let p = futures.removeValue(forKey: id ?? "")
+        if let r = p, !r.isDone {
+            try r.resolve(result: pkt)
         }
+        
+//        if let idUnwrapped = id {
+//            let p = futures.removeValue(forKey: idUnwrapped)
+//            if let r = p, !r.isDone {
+//                try r.resolve(result: pkt)
+//            }
+//        }
     }
     private func removeCred(jsondoc: String) -> String {
         // Convert the JSON string to Data
