@@ -544,7 +544,7 @@ public class Tinode {
     private func resolveWithPacket(id: String?, pkt: ServerMessage) throws {
         
         let p = futures.removeValue(forKey: id ?? "")
-        if let r = p, !r.isDone {
+        if let r = p {
             try r.resolve(result: pkt)
         }
         
