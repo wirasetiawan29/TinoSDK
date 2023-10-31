@@ -650,11 +650,14 @@ public class Tinode {
                 if let t = getTopic(topicName: topicName) {
                     t.routePres(pres: pres)
                     // For P2P topics presence is addressed to 'me' only. Forward it to the actual topic, if it's found.
-                    if topicName == Tinode.kTopicMe, case .p2p = Tinode.topicTypeByName(name: pres.src) {
-                        if let forwardTo = getTopic(topicName: pres.src!) {
-                            forwardTo.routePres(pres: pres)
-                        }
+                    if let forwardTo = getTopic(topicName: pres.src!) {
+                        forwardTo.routePres(pres: pres)
                     }
+//                    if topicName == Tinode.kTopicMe, case .p2p = Tinode.topicTypeByName(name: pres.src) {
+//                        if let forwardTo = getTopic(topicName: pres.src!) {
+//                            forwardTo.routePres(pres: pres)
+//                        }
+//                    }
                 }
             }
             listenerNotifier.onPresMessage(pres: pres)
