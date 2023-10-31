@@ -267,7 +267,10 @@ public class Tinode {
         }
 
         public var listenersThreadSafe: [TinodeEventListener] {
-            queue.sync { return self.listeners }
+            queue.sync {
+                print(String(cString: __dispatch_queue_get_label(nil)))
+                return self.listeners
+            }
         }
 
         func onConnect(code: Int, reason: String, params: [String: JSONValue]?) {
