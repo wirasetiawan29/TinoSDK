@@ -44,20 +44,10 @@ public enum TinodeError: LocalizedError, CustomStringConvertible {
     public var errorDescription: String? {
         return description
     }
-    
-//    public var errorCode: Int? {
-//        switch self {
-//        case .serverResponseError(let int,_ ,_ ):
-//            return int
-//        default:
-//            return nil
-//        }
-//    }
 }
 
 // Callback interface called by Connection
 // when it receives events from the websocket.
-@available(iOS 13.0, *)
 public protocol TinodeEventListener: AnyObject {
     // Connection established successfully, handshakes exchanged.
     // The connection is ready for login.
@@ -152,8 +142,11 @@ public class Tinode {
     public static let kMaxFileUploadSize = "maxFileUploadSize"
 
     public static let kNoteKp = "kp"
+    public static let kNoteKpA = "kpa"
+    public static let kNoteKpV = "kpv"
     public static let kNoteRead = "read"
     public static let kNoteRecv = "recv"
+    public static let kNoteCall = "call"
     public static let kNullValue = "\u{2421}"
     internal static let log = Log(subsystem: "co.tinode.tinodesdk")
 
@@ -549,48 +542,7 @@ public class Tinode {
             }
         }
     }
-    private func removeCred(jsondoc: String) -> String {
-        // Convert the JSON string to Data
-        guard let jsonData = jsondoc.data(using: .utf8) else {
-            fatalError("Invalid JSON data")
-        }
-
-        // Parse the JSON data into a Dictionary
-        do {
-            if var jsonDict = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-                // Use the jsonObject variable as a dictionary
-                // Remove the "reqCred" field
-                if var ctrlParams = jsonDict["ctrl"] as? [String: Any], var params = ctrlParams["params"] as? [String: Any] {
-                    params.removeValue(forKey: "reqCred")
-                    ctrlParams["params"] = params
-                    jsonDict["ctrl"] = ctrlParams
-                }
-
-                // Convert the updated dictionary back to JSON data
-                guard let updatedJsonData = try? JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted]),
-                      let updatedJsonString = String(data: updatedJsonData, encoding: .utf8) else {
-                    fatalError("Failed to convert JSON to string")
-                }
-
-                print("removed cred :  \(updatedJsonString)")
-                return updatedJsonString
-                
-            }
-        } catch {
-            print("Error parsing JSON: \(error)")
-        }
-        return jsondoc
-    }
-    
-    
-    private func dispatch(_ msgg: String) throws {
-//        let msg = "{\"ctrl\":{\"id\":\"73697\",\"params\":{\"build\":\"mysql:v0.22.8\",\"callTimeout\":30,\"iceServers\":[{\"urls\":[\"stun:stun.l.google.com:19302\"]},{\"username\":\"bb349260055bc625dcaf24a5\",\"credential\":\"+u28h11ZfSMfX2V6\",\"urls\":[\"turn:relay.metered.ca:80\",\"turn:relay.metered.ca:443\",\"turn:relay.metered.ca:443?transport=tcp\"]}],\"maxFileUploadSize\":8388608,\"maxMessageSize\":262144,\"maxSubscriberCount\":32,\"maxTagCount\":16,\"maxTagLength\":96,\"minTagLength\":2,\"reqCred\":{\"auth\":[\"email\"]},\"ver\":\"0.22\"},\"code\":201,\"text\":\"created\",\"ts\":\"2023-06-13T06:46:34.374Z\"}}"
-        
-//        let msg = "
-//        {"ctrl":{"id":"66582","params":{"build":"mysql:v0.22.7","callTimeout":30,"iceServers":[{"urls":["stun:stun.l.google.com:19302"]},{"username":"bb349260055bc625dcaf24a5","credential":"+u28h11ZfSMfX2V6","urls":["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"]}],"maxFileUploadSize":33554432,"maxMessageSize":4194304,"maxSubscriberCount":32,"maxTagCount":16,"maxTagLength":96,"minTagLength":2,\"reqCred\":{\"auth\":[\"email\"]},"ver":"0.22"},"code":201,"text":"created","ts":"2024-06-13T09:15:24.736Z"}}"
-        
-        let msg = removeCred(jsondoc: msgg)
-        
+    private func dispatch(_ msg: String) throws {
         guard !msg.isEmpty else {
             return
         }
@@ -846,6 +798,13 @@ public class Tinode {
         return r
     }
 
+    public static func isChannel(name: String?) -> Bool {
+        if let name = name, !name.isEmpty {
+            return name.starts(with: kTopicChnPrefix) || name.starts(with: kChannelNew)
+        }
+        return false
+    }
+
     /// Create account using a single basic authentication scheme. A connection must be established
     /// prior to calling this method.
     ///
@@ -1012,6 +971,9 @@ public class Tinode {
 
         // auth expires
         if ctrl.code < ServerMessage.kStatusMultipleChoices {
+            guard authToken != nil else {
+                throw TinodeError.invalidState("Server did not return auth token")
+            }
             isConnectionAuthenticated = true
             store?.myUid = newUid
             setAutoLoginWithToken(token: authToken!)
