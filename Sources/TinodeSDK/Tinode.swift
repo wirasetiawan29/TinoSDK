@@ -583,7 +583,7 @@ public class Tinode {
     }
     
     
-    private func dispatch(_ msgg: String) throws {
+    private func dispatch(_ msg: String) throws {
         
         guard !msg.isEmpty else {
             return
