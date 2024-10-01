@@ -5,6 +5,7 @@
 //
 
 import Foundation
+import UIKit
 
 public class Photo: Codable {
     public static let kDefaultType = "png"
@@ -232,3 +233,4 @@ public class TheCard: Codable, Mergeable {
         return changed
     }
 }
+
