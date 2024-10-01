@@ -546,8 +546,6 @@ public class Tinode {
         guard !msg.isEmpty else {
             return
         }
-        
-        print("Dispatch In: \(msg)")
 
         listenerNotifier.onRawMessage(msg: msg)
         guard let data = msg.data(using: .utf8) else {
