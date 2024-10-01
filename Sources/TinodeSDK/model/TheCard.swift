@@ -5,7 +5,6 @@
 //
 
 import Foundation
-import UIKit
 
 public class Photo: Codable {
     public static let kDefaultType = "png"

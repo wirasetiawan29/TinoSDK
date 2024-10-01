@@ -114,7 +114,7 @@ open class Drafty: Codable, CustomStringConvertible, Equatable {
         } else {
             // Non-optional decoding as a Drafty object.
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            // Txt is missing for attachments. 
+            // Txt is missing for attachments.
             do {
                 txt = try container.decode(String.self, forKey: .txt)
             } catch DecodingError.keyNotFound {
