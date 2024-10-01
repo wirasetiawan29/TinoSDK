@@ -44,20 +44,10 @@ public enum TinodeError: LocalizedError, CustomStringConvertible {
     public var errorDescription: String? {
         return description
     }
-    
-//    public var errorCode: Int? {
-//        switch self {
-//        case .serverResponseError(let int,_ ,_ ):
-//            return int
-//        default:
-//            return nil
-//        }
-//    }
 }
 
 // Callback interface called by Connection
 // when it receives events from the websocket.
-@available(iOS 13.0, *)
 public protocol TinodeEventListener: AnyObject {
     // Connection established successfully, handshakes exchanged.
     // The connection is ready for login.
@@ -152,8 +142,11 @@ public class Tinode {
     public static let kMaxFileUploadSize = "maxFileUploadSize"
 
     public static let kNoteKp = "kp"
+    public static let kNoteKpA = "kpa"
+    public static let kNoteKpV = "kpv"
     public static let kNoteRead = "read"
     public static let kNoteRecv = "recv"
+    public static let kNoteCall = "call"
     public static let kNullValue = "\u{2421}"
     internal static let log = Log(subsystem: "co.tinode.tinodesdk")
 
@@ -549,42 +542,7 @@ public class Tinode {
             }
         }
     }
-    private func removeCred(jsondoc: String) -> String {
-        // Convert the JSON string to Data
-        guard let jsonData = jsondoc.data(using: .utf8) else {
-            fatalError("Invalid JSON data")
-        }
-
-        // Parse the JSON data into a Dictionary
-        do {
-            if var jsonDict = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-                // Use the jsonObject variable as a dictionary
-                // Remove the "reqCred" field
-                if var ctrlParams = jsonDict["ctrl"] as? [String: Any], var params = ctrlParams["params"] as? [String: Any] {
-                    params.removeValue(forKey: "reqCred")
-                    ctrlParams["params"] = params
-                    jsonDict["ctrl"] = ctrlParams
-                }
-
-                // Convert the updated dictionary back to JSON data
-                guard let updatedJsonData = try? JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted]),
-                      let updatedJsonString = String(data: updatedJsonData, encoding: .utf8) else {
-                    fatalError("Failed to convert JSON to string")
-                }
-
-                print("removed cred :  \(updatedJsonString)")
-                return updatedJsonString
-                
-            }
-        } catch {
-            print("Error parsing JSON: \(error)")
-        }
-        return jsondoc
-    }
-    
-    
     private func dispatch(_ msg: String) throws {
-        
         guard !msg.isEmpty else {
             return
         }
@@ -840,6 +798,13 @@ public class Tinode {
         return r
     }
 
+    public static func isChannel(name: String?) -> Bool {
+        if let name = name, !name.isEmpty {
+            return name.starts(with: kTopicChnPrefix) || name.starts(with: kChannelNew)
+        }
+        return false
+    }
+
     /// Create account using a single basic authentication scheme. A connection must be established
     /// prior to calling this method.
     ///
@@ -1006,6 +971,9 @@ public class Tinode {
 
         // auth expires
         if ctrl.code < ServerMessage.kStatusMultipleChoices {
+            guard authToken != nil else {
+                throw TinodeError.invalidState("Server did not return auth token")
+            }
             isConnectionAuthenticated = true
             store?.myUid = newUid
             setAutoLoginWithToken(token: authToken!)
