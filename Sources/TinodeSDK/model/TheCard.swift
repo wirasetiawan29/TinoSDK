@@ -144,9 +144,11 @@ public class TheCard: Codable, Mergeable {
     public var bday: Birthday?
     // Free-form description.
     public var note: String?
+    public var platform: String?
+    public var version: String?
 
     private enum CodingKeys: String, CodingKey {
-        case fn, n, org, tel, email, impp, photo, bday, note
+        case fn, n, org, tel, email, impp, photo, bday, note, platform, version
     }
 
     public init() {}
@@ -179,6 +181,8 @@ public class TheCard: Codable, Mergeable {
         copy.impp = self.impp?.map { $0 }
         copy.bday = self.bday?.copy()
         copy.note = self.note
+        copy.platform = self.platform
+        copy.version = self.version
         return copy
     }
 
@@ -228,6 +232,14 @@ public class TheCard: Codable, Mergeable {
         }
         if another.note != nil {
             self.note = !Tinode.isNull(obj: another.note) ? another.note : nil
+            changed = true
+        }
+        if another.platform != nil {
+            self.platform = !Tinode.isNull(obj: another.platform) ? another.platform : nil
+            changed = true
+        }
+        if another.version != nil {
+            self.version = !Tinode.isNull(obj: another.version) ? another.version : nil
             changed = true
         }
         return changed
